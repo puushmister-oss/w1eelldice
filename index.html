@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Wheellegit Dice 🎲</title>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+<style>
+body{
+  margin:0;
+  font-family:system-ui;
+  overflow:hidden;
+  transition:.4s;
+}
+
+/* 🎨 темы */
+body.blue{background:radial-gradient(circle,#0a1a3a,#020617);}
+body.purple{background:radial-gradient(circle,#2a0a3a,#120217);}
+body.orange{background:radial-gradient(circle,#3a1a05,#120703);}
+body.red{background:radial-gradient(circle,#3a0505,#120303);}
+body.black{background:radial-gradient(circle,#000,#050505);}
+
+/* 🧠 BRAINROT */
+#brainrot{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+}
+
+.br{
+  position:absolute;
+  font-size:22px;
+  animation:float linear infinite;
+  opacity:.9;
+}
+
+@keyframes float{
+  0%{transform:translateY(110vh) rotate(0deg);}
+  100%{transform:translateY(-20vh) rotate(360deg);}
+}
+
+/* карточка */
+.app{
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.card{
+  width:380px;
+  padding:20px;
+  border-radius:18px;
+  background:rgba(255,255,255,0.07);
+  backdrop-filter:blur(14px);
+  text-align:center;
+  color:white;
+}
+
+/* 🎲 кубики */
+#diceArea{
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:10px;
+  margin:20px 0;
+}
+
+.dice{
+  width:55px;
+  height:55px;
+  border-radius:12px;
+  opacity:0;
+}
+
+/* обычный */
+@keyframes drop{
+  0%{transform:translateY(-120px);opacity:0;}
+  100%{transform:translateY(0);opacity:1;}
+}
+.dice.show{
+  animation:drop .4s ease forwards;
+}
+
+/* 🔥 МЕГА (медленный и мощный) */
+@keyframes megaDrop{
+  0%{transform:translateY(-300px) scale(.4) rotate(-20deg);opacity:0;}
+  60%{transform:translateY(20px) scale(1.2);}
+  100%{transform:translateY(0);opacity:1;}
+}
+
+.dice.mega.show{
+  animation:megaDrop 1s cubic-bezier(.2,1.5,.2,1) forwards;
+  box-shadow:0 0 20px white;
+}
+
+/* цвета */
+.red{background:#ff4d4d;}
+.orange{background:#ff9f1a;}
+.yellow{background:#ffd500;}
+.green{background:#2ee59d;}
+.blue{background:#3b82f6;}
+.purple{background:#a855f7;}
+
+button,select{
+  padding:10px;
+  margin:6px;
+  border:none;
+  border-radius:10px;
+  font-weight:700;
+  cursor:pointer;
+}
+button{background:#6366f1;color:white;}
+
+.overlay{
+  position:fixed;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,.5);
+  opacity:0;
+  pointer-events:none;
+}
+.overlay.show{opacity:1}
+
+/* тряска */
+@keyframes shake{
+  25%{transform:translate(-5px,5px)}
+  50%{transform:translate(5px,-5px)}
+}
+.shake{
+  animation:shake .4s infinite;
+}
+</style>
+</head>
+
+<body class="blue">
+
+<div id="brainrot"></div>
+
+<div class="app">
+  <div class="card">
+
+    <h2>Wheellegit Dice 🎲</h2>
+
+    <select onchange="setTheme(this.value)">
+      <option value="blue">Blue</option>
+      <option value="purple">Purple</option>
+      <option value="orange">Orange</option>
+      <option value="red">Red</option>
+      <option value="black">Black</option>
+    </select>
+
+    <br>
+
+    <select id="count">
+      <option>1</option><option>2</option>
+      <option selected>3</option>
+      <option>4</option><option>5</option><option>6</option>
+    </select>
+
+    <div id="diceArea"></div>
+
+    <button onclick="roll()">Roll ⚡</button>
+    <button onclick="mega()">MEGA 🚀</button>
+
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <h2 id="msg" style="color:white">Loading...</h2>
+</div>
+
+<script>
+const colors=["red","orange","yellow","green","blue","purple"];
+
+/* 🎨 тема */
+function setTheme(t){
+  document.body.className=t;
+}
+
+/* 🧠 твой brainrot */
+const brainrotWords=[
+  "Захур","Тралала","Лилили","Лалила",
+  "Орколера","Оргала","Brainrot","💀","🔥"
+];
+
+setInterval(()=>{
+  const b=document.createElement("div");
+  b.className="br";
+  b.textContent=brainrotWords[Math.floor(Math.random()*brainrotWords.length)];
+  b.style.left=Math.random()*100+"vw";
+  b.style.animationDuration=(6+Math.random()*6)+"s";
+  brainrot.appendChild(b);
+  setTimeout(()=>b.remove(),12000);
+},400);
+
+/* звук */
+let ctx;
+function sound(i){
+  if(!ctx) ctx=new AudioContext();
+  const o=ctx.createOscillator();
+  const g=ctx.createGain();
+  o.frequency.value=200+i*80;
+  g.gain.setValueAtTime(0.3,ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.2);
+  o.connect(g);
+  g.connect(ctx.destination);
+  o.start();
+  o.stop(ctx.currentTime+0.2);
+}
+
+function show(t){
+  msg.textContent=t;
+  overlay.classList.add("show");
+}
+
+/* обычный */
+function roll(){
+  show("Rolling...");
+  const count=+countEl.value;
+
+  const res=Array.from({length:count},
+    ()=>colors[Math.floor(Math.random()*colors.length)]
+  );
+
+  setTimeout(()=>{
+    overlay.classList.remove("show");
+    diceArea.innerHTML="";
+
+    res.forEach((c,i)=>{
+      const d=document.createElement("div");
+      d.className="dice "+c;
+      diceArea.appendChild(d);
+
+      setTimeout(()=>{
+        d.classList.add("show");
+        sound(i);
+      },i*100);
+    });
+
+  },400);
+}
+
+/* 🚀 МЕГА */
+function mega(){
+  show("MEGA ROLL 🚀");
+
+  document.body.classList.add("shake");
+
+  const count=+countEl.value;
+
+  const res=Array.from({length:count},
+    ()=>colors[Math.floor(Math.random()*colors.length)]
+  );
+
+  setTimeout(()=>{
+    overlay.classList.remove("show");
+    diceArea.innerHTML="";
+
+    res.forEach((c,i)=>{
+      const d=document.createElement("div");
+      d.className="dice mega "+c;
+      diceArea.appendChild(d);
+
+      setTimeout(()=>{
+        d.classList.add("show");
+        sound(i);
+
+        /* 💥 мощные вспышки */
+        confetti({
+          particleCount:120,
+          spread:140,
+          origin:{y:0.6}
+        });
+
+      },i*800); // МЕДЛЕННО ПО ОЧЕРЕДИ
+    });
+
+    setTimeout(()=>{
+      document.body.classList.remove("shake");
+    },count*800+800);
+
+  },600);
+}
+
+const diceArea=document.getElementById("diceArea");
+const overlay=document.getElementById("overlay");
+const msg=document.getElementById("msg");
+const countEl=document.getElementById("count");
+const brainrot=document.getElementById("brainrot");
+</script>
+
+</body>
+</html>
